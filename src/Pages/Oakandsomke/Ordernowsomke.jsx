@@ -68,7 +68,7 @@ const FoodDeliveryApp = () => {
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 text-center">
-              Rogan
+              Bftp
             </h1>
             <p className="text-sm text-gray-600 text-center mt-1">
               Smoke Meet Everyday
@@ -226,7 +226,7 @@ const FoodDeliveryApp = () => {
             <div className="flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
               <Leaf className="w-4 h-4 text-red-600" />
             </div>
-            <div className="font-bold text-xl text-red-600">Rogan</div>
+            <div className="font-bold text-xl text-red-600">Bftp</div>
           </div>
           <div className="flex items-center space-x-2">
             <button onClick={handleshoopingcartClick} className="p-2">

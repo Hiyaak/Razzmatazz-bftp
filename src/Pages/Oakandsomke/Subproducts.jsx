@@ -12,6 +12,14 @@ const Subproducts = () => {
   const navigate = useNavigate()
   const { cart, addToCart, updateQuantity } = useCart()
 
+  const {
+    selectedMethod,
+    selectedGovernate,
+    selectedGovernateId,
+    selectedArea,
+    selectedAreaId
+  } = JSON.parse(localStorage.getItem('selectedLocation') || '{}')
+
   const [subProductCategories, setSubProductCategories] = useState([])
   const searchParams = new URLSearchParams(location.search)
   const productId = searchParams.get('productId')
@@ -26,7 +34,7 @@ const Subproducts = () => {
     try {
       const payload = {
         product_id: productId,
-        brandName: 'BFTP'
+        brandName: 'BFTP',
       }
       const { data } = await ApiService.post('getAllSubproducts', payload)
       if (data.status) setSubProductCategories(data.subproducts)

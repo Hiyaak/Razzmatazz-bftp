@@ -20,9 +20,21 @@ const FoodDeliveryApp = () => {
   const [brandId, setBrandId] = useState(null);
   const navigate = useNavigate();
 
-  const { selectedMethod, selectedGovernate, selectedArea } = JSON.parse(
-    localStorage.getItem('selectedLocation') || '{}'
-  );
+  const {
+    selectedMethod,
+    selectedGovernate,
+    selectedGovernateId,
+    selectedArea,
+    selectedAreaId,
+  } = JSON.parse(localStorage.getItem('selectedLocation') || '{}');
+
+  console.log('Full selectedLocation:', {
+    selectedMethod,
+    selectedGovernate,
+    selectedGovernateId,
+    selectedArea,
+    selectedAreaId,
+  });
 
   const getProductCategories = async () => {
     try {
@@ -34,11 +46,10 @@ const FoodDeliveryApp = () => {
           const brandIdFromApi = data.products[0].brand_id;
           setBrandId(brandIdFromApi);
 
-          // ✅ also persist to localStorage
           localStorage.setItem('brandId', brandIdFromApi);
         }
 
-        console.log('brand products:', data.products);
+        // console.log('brand products:', data.products)
       }
     } catch (error) {
       console.log('error ', error);
@@ -148,7 +159,10 @@ const FoodDeliveryApp = () => {
                   </p>
                 </div>
               </div>
-              <button className="text-red-500 font-medium hover:text-red-600">
+              <button
+                onClick={() => navigate('/pickupdeviler')}
+                className="text-red-500 font-medium hover:text-red-600"
+              >
                 Edit
               </button>
             </div>

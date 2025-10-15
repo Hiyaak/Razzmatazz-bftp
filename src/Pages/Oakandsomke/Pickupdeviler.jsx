@@ -129,7 +129,7 @@ const HeroSection = () => {
   const handleStartOrdering = () => {
     if (selectedArea || selectedGovernate) {
       localStorage.setItem(
-        'selectedLocation',
+        `selectedLocation_${brandId}`,
         JSON.stringify({
           selectedMethod,
           selectedGovernate,
@@ -153,9 +153,8 @@ const HeroSection = () => {
   const handleLogout = () => {
     localStorage.removeItem('guestUserId')
     localStorage.removeItem('registredUserId')
-    localStorage.removeItem('selectedLocation')
-
-    navigate('/') // if using react-router
+    localStorage.removeItem(`selectedLocation_${brandId}`)
+    navigate('/')
   }
 
   const handleMenuClick = () => navigate('/menu')

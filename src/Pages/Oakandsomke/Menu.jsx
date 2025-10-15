@@ -16,6 +16,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom'
 import heroImage from '../../assets/concept.jpg'
 import ApiService from '../../Services/Apiservice'
+import { toast } from 'react-toastify'
 
 const MenuPage = () => {
   const navigate = useNavigate()
@@ -40,7 +41,7 @@ const MenuPage = () => {
       const { data } = await ApiService.post('registerWithEmail', payload)
 
       if (data.status) {
-        alert('User Registered successfully. Please login now.')
+        toast.success('User Registered successfully. Please login now.')
 
         // Clear form fields if you want
         setFormData({ email: '', password: '' })
@@ -51,11 +52,11 @@ const MenuPage = () => {
         // Optionally switch view to 'form' if not already
         setActiveView('form')
       } else {
-        alert(data.message || 'Registration failed')
+        toast.error(data.message || 'Registration failed')
       }
     } catch (error) {
       console.log('error ', error)
-      alert('Something went wrong during registration')
+      toast.error('Something went wrong during registration')
     }
   }
 
@@ -71,15 +72,15 @@ const MenuPage = () => {
 
       if (data.status) {
         // Save user ID
-        localStorage.setItem('registredUserId', data.user._id)
-        alert(data.message) // "Login successful"
+        localStorage.setItem(`registredUserId_${storedBrandId}`, data.user._id)
+        toast.success('Login successful!')
         navigate('/shoopingcart') // go to cart after login
       } else {
-        alert(data.message || 'Login failed')
+        toast.error(data.message || 'Login failed')
       }
     } catch (error) {
       console.error('Login error:', error)
-      alert('Something went wrong')
+      toast.error('Something went wrong')
     }
   }
 
@@ -94,11 +95,11 @@ const MenuPage = () => {
   const handeleSearch = () => {
     navigate('/search')
   }
+
   const handleLogout = () => {
     localStorage.removeItem('guestUserId')
     localStorage.removeItem('registredUserId')
-    localStorage.removeItem('selectedLocation')
-
+    localStorage.removeItem(`selectedLocation_${brandId}`)
     navigate('/')
   }
 
@@ -380,7 +381,7 @@ const MenuPage = () => {
                 onClick={
                   activeTab === 'login' ? handleLoginUser : handleRegisterUser
                 }
-                className='w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors mt-8 text-lg'
+                className='w-full bg-[#FA0303] hover:bg-[#AF0202] text-white font-bold py-3 rounded-lg transition-colors mt-8 text-lg'
               >
                 {activeTab === 'login' ? 'Login' : 'Register'}
               </button>

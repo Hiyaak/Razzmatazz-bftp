@@ -4,7 +4,7 @@ import { Phone, MapPin, ArrowLeft } from 'lucide-react'
 import ApiService from '../../../Services/Apiservice'
 import RightPanelLayout from '../../../Layout/RightPanelLayout'
 
-const BrabdDetails = () => {
+const BrandDetails = () => {
   const [brandDetails, setBrandDetails] = useState(null)
   const navigate = useNavigate()
   const { state } = useLocation()
@@ -177,4 +177,4 @@ const BrabdDetails = () => {
   )
 }
 
-export default BrabdDetails
+export default BrandDetails

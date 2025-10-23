@@ -39,7 +39,7 @@ const Contact = () => {
   const getLocations = async () => {
     try {
       const { data } = await ApiService.get(
-        'getLocationsByBrand?brandName=Oak and Smoke'
+        'getLocationsByBrand?brandName=BFTP'
       )
       if (data.status && data.locations) {
         setLocations(data.locations)

@@ -127,7 +127,7 @@ const FoodDeliveryApp = () => {
                     <h1 className='text-lg font-bold text-gray-900'>
                       BFTP
                     </h1>
-                    <p className='text-sm text-gray-500'>Smoke Meat Everyday</p>
+                    <p className='text-sm text-gray-500'>Best Food Delivery</p>
                   </div>
                 </div>
 

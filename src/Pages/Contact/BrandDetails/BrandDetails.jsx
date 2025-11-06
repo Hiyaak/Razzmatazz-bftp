@@ -4,7 +4,7 @@ import { Phone, MapPin, ArrowLeft } from 'lucide-react'
 import ApiService from '../../../Services/Apiservice'
 import RightPanelLayout from '../../../Layout/RightPanelLayout'
 
-const BrandDetails = () => {
+const BrabdDetails = () => {
   const [brandDetails, setBrandDetails] = useState(null)
   const navigate = useNavigate()
   const { state } = useLocation()
@@ -50,7 +50,7 @@ const BrandDetails = () => {
     <div className='flex h-screen overflow-hidden'>
       {/* Left Panel - Reduced Width */}
       <div
-        className='w-full md:w-2/5 h-screen overflow-y-auto scrollbar-hide bg-gray-50'
+        className='w-full md:w-[42%] h-screen overflow-y-auto scrollbar-hide bg-gray-50'
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none'
@@ -177,4 +177,4 @@ const BrandDetails = () => {
   )
 }
 
-export default BrandDetails
+export default BrabdDetails

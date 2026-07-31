@@ -1,18 +1,21 @@
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { ArrowLeft, ChevronDown, Search, CarFront, Store } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { FaCarSide, FaWalking } from 'react-icons/fa'
 
 import ApiService from '../../Services/Apiservice'
 import RightPanelLayout from '../../Layout/RightPanelLayout'
+import { useTranslation } from 'react-i18next'
+import { LanguageContext } from '../../Context/LanguageContext'
 
 const HeroSection = () => {
+  const { t } = useTranslation()
+  const { language } = useContext(LanguageContext)
   const navigate = useNavigate()
   const location = useLocation()
   const brandId = localStorage.getItem('brandId')
 
   const methodFromState = location.state?.method || 'delivery'
-
   const [selectedMethod, setSelectedMethod] = useState(methodFromState)
   const [managementStatus, setManagementStatus] = useState({
     deliveryStatus: true,
@@ -27,6 +30,7 @@ const HeroSection = () => {
   const [selectedAreaId, setSelectedAreaId] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [manuallyExpanded, setManuallyExpanded] = useState(new Set())
+  const [branches, setBranches] = useState([])
 
   // ✅ Enhanced filter logic - Search only areas, not governates
   const filteredGovernates = governates
@@ -60,7 +64,7 @@ const HeroSection = () => {
 
       if (data.status && data.data) {
         setManagementStatus({
-          deliveryStatus: data.data.deliveryStatus ?? true, // null/undefined → true
+          deliveryStatus: data.data.deliveryStatus ?? true,
           pickupStatus: data.data.pickupStatus ?? true
         })
       }
@@ -72,6 +76,23 @@ const HeroSection = () => {
   useEffect(() => {
     handlemanagementStatus()
   }, [])
+
+  const getBranchesByBrand = async () => {
+    try {
+      const { data } = await ApiService.get(
+        `getLocationsByBrand?brandId=${brandId}`
+      )
+
+      if (data.status && data.locations) {
+        setBranches(data.locations)
+      } else {
+        setBranches([])
+      }
+    } catch (error) {
+      console.error('Error fetching branches:', error)
+      setBranches([])
+    }
+  }
 
   // Fetch all governates for the brand based on selected method
   const getAllGovernates = async () => {
@@ -142,9 +163,14 @@ const HeroSection = () => {
       setAreasByGovernate({})
       setManuallyExpanded(new Set())
       setExpandedGovernateId(null)
-      getAllGovernates()
+
+      if (selectedMethod === 'pickup') {
+        getBranchesByBrand()
+      } else {
+        getAllGovernates()
+      }
     }
-  }, [brandId, selectedMethod])
+  }, [brandId, selectedMethod, language])
 
   // Auto-fetch areas for visible governates during search
   useEffect(() => {
@@ -201,19 +227,24 @@ const HeroSection = () => {
   }
 
   const handleStartOrdering = () => {
-    if (selectedArea || selectedGovernate) {
-      localStorage.setItem(
-        `selectedLocation_${brandId}`,
-        JSON.stringify({
-          selectedMethod,
-          selectedGovernate,
-          selectedGovernateId,
-          selectedArea,
-          selectedAreaId
-        })
-      )
-      navigate('/')
-    }
+    const isValid =
+      (selectedMethod === 'delivery' && selectedArea) ||
+      (selectedMethod === 'pickup' && selectedGovernate)
+
+    if (!isValid) return
+
+    localStorage.setItem(
+      `selectedLocation_${brandId}`,
+      JSON.stringify({
+        selectedMethod,
+        selectedGovernate,
+        selectedGovernateId,
+        selectedArea,
+        selectedAreaId
+      })
+    )
+
+    navigate('/')
   }
 
   // Determine if areas should be shown for a governate
@@ -249,12 +280,12 @@ const HeroSection = () => {
         {/* Scrollable Content */}
         <div className='flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
           {/* Method Selection */}
-          <div className='space-y-6  border-gray-200'>
+          <div className='flex flex-col gap-6 border-gray-200'>
             <h2 className='font-medium text-gray-700 bg-gray-100 px-6 py-3 border-b border-gray-200'>
-              Method
+              {t('brand.Method')}
             </h2>
             <div className='px-5 pb-6 border-b border-gray-200'>
-              <div className='flex space-x-4'>
+              <div className='flex gap-4'>
                 {managementStatus.deliveryStatus && (
                   <button
                     onClick={() => handleMethodChange('delivery')}
@@ -265,7 +296,7 @@ const HeroSection = () => {
                     }`}
                   >
                     <FaCarSide className='w-5 h-5' />
-                    Delivery
+                    {t('brand.Delivery')}
                   </button>
                 )}
 
@@ -279,36 +310,39 @@ const HeroSection = () => {
                     }`}
                   >
                     <FaWalking className='w-5 h-5' />
-                    Pickup
+                    {t('brand.Pickup')}
                   </button>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Governate / Area Selection */}
-          <div className='pb-6'>
-            <div className='flex items-center bg-gray-100 space-x-2 mb-3 border-b border-gray-300 py-4 px-6 w-full'>
-              <span className='text-gray-700 font-medium'>
-                {selectedMethod === 'delivery' ? 'Location' : 'Choose a store'}
-              </span>
-            </div>
+          <div className='flex flex-col  border-gray-200'>
+            <h2 className='font-medium text-gray-700 bg-gray-100 px-6 py-3 border-b border-gray-200'>
+              Location
+            </h2>
 
-            {/* 🔍 Search Bar */}
-            <div className='pb-6'>
-              <div className='relative'>
-                <Search className='absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
-                <input
-                  type='text'
-                  placeholder='Search...'
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className='w-full pl-10 pr-6 py-3 border-b border-gray-200 outline-none focus:border-red-500 transition-colors'
-                />
+            {/* Search only for Delivery */}
+            {selectedMethod === 'delivery' && (
+              <div className='border-gray-200'>
+                <div className='relative'>
+                  <Search className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
+
+                  <input
+                    type='text'
+                    placeholder='Search...'
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className='w-full p-3 pl-10 border-b border-gray-300 focus:outline-none focus:border-red-500'
+                  />
+                </div>
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* List Governates */}
+          {/* Governate / Area Selection */}
+          {/* DELIVERY VIEW */}
+          {selectedMethod === 'delivery' && (
             <div className='space-y-2'>
               {filteredGovernates.length > 0 ? (
                 filteredGovernates.map(gov => {
@@ -340,7 +374,7 @@ const HeroSection = () => {
                                 onClick={() => handleAreaSelect(gov, area)}
                                 className={`w-full text-left px-3 py-2 rounded-lg transition-colors duration-200 ${
                                   selectedAreaId === area._id
-                                    ? 'bg-[#FA0303] hover:bg-[#AF0202] text-white font-semibold'
+                                    ? 'bg-[#FA0303] text-white font-semibold'
                                     : 'hover:bg-gray-100 text-gray-700'
                                 }`}
                               >
@@ -363,23 +397,60 @@ const HeroSection = () => {
                 </p>
               )}
             </div>
-          </div>
+          )}
+
+          {/* PICKUP VIEW */}
+          {selectedMethod === 'pickup' && (
+            <div className='space-y-2 p-2'>
+              {branches.length > 0 ? (
+                branches.map(branch => (
+                  <button
+                    key={branch._id}
+                    onClick={() => {
+                      setSelectedGovernate(branch.locname)
+                      setSelectedGovernateId(branch._id)
+                      setSelectedArea('')
+                      setSelectedAreaId('')
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition ${
+                      selectedGovernateId === branch._id
+                        ? 'bg-[#FA0303] text-white font-semibold'
+                        : 'hover:bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {branch.locname}
+                  </button>
+                ))
+              ) : (
+                <p className='text-gray-500 text-sm text-center'>
+                  No branches available
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Start Ordering Button */}
         <div className='p-3 border-t border-gray-200 bg-white flex-shrink-0 sticky bottom-0'>
           <button
             onClick={handleStartOrdering}
-            disabled={!selectedArea && !selectedGovernate}
+            // disabled={!selectedArea && !selectedGovernate}
+            disabled={
+              selectedMethod === 'delivery' ? !selectedArea : !selectedGovernate
+            }
             className={`w-full py-3 text-white rounded-lg font-semibold text-lg transition ${
-              selectedArea || selectedGovernate
-                ? `bg-[#FA0303] hover:bg-[#AF0202]`
+              selectedMethod === 'delivery'
+                ? selectedArea
+                  ? 'bg-[#FA0303] hover:bg-[#AF0202]'
+                  : 'bg-gray-400 cursor-not-allowed'
+                : selectedGovernate
+                ? 'bg-[#FA0303] hover:bg-[#AF0202]'
                 : 'bg-gray-400 cursor-not-allowed'
             }`}
           >
             {selectedArea || selectedGovernate
-              ? 'Done'
-              : 'Select your location'}
+              ? t('brand.Done')
+              : t('brand.Selectlocation')}
           </button>
         </div>
       </div>

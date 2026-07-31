@@ -1,25 +1,30 @@
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import {
   Clock,
   MapPin,
   Menu,
   ShoppingBag,
   Search,
-  User,
-  Leaf,
-  LogOut,
   AlertCircle,
-  Instagram
+  Instagram,
+  Globe,
+  Type
 } from 'lucide-react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import heroImage from '../../assets/concept.jpg'
-
-import oak from '../../assets/bftp.png'
+import CateringImage from '../../assets/catering.jpg'
+import ComboImage from '../../assets/combo.jpg'
+import ComboDIY from '../../assets/diy.jpg'
+import oak from '../../assets/oaklogo1.png'
 import ApiService, { ImagePath } from '../../Services/Apiservice'
 import RightPanelLayout from '../../Layout/RightPanelLayout'
 import { LuBike } from 'react-icons/lu'
+import { useTranslation } from 'react-i18next'
+import { LanguageContext } from '../../Context/LanguageContext'
 
 const FoodDeliveryApp = () => {
+  const { t } = useTranslation()
+  const { language, changeLanguage } = useContext(LanguageContext)
   const [productCategories, setproductCategories] = useState([])
   const [managementStatus, setManagementStatus] = useState({
     deliveryStatus: true,
@@ -68,7 +73,7 @@ const FoodDeliveryApp = () => {
 
   useEffect(() => {
     getProductCategories()
-  }, [])
+  }, [language])
 
   const {
     selectedMethod,
@@ -86,10 +91,8 @@ const FoodDeliveryApp = () => {
     selectedAreaId
   })
 
-  const handleProduct = (productId, productName) => {
-    navigate(
-      `/subproduct/${encodeURIComponent(productName)}?productId=${productId}`
-    )
+  const handleProduct = productId => {
+    navigate(`/subproduct/${productId}`)
   }
 
   const handleMenuClick = () => {
@@ -135,7 +138,7 @@ const FoodDeliveryApp = () => {
             >
               <div className='flex items-center justify-between px-6 py-4 hover:bg-gray-100'>
                 {/* Left side - logo and text */}
-                <div className='flex items-center space-x-3'>
+                <div className='flex items-center gap-3'>
                   <img
                     src={oak}
                     alt='Logo'
@@ -143,10 +146,12 @@ const FoodDeliveryApp = () => {
                   />
                   <div>
                     <h1 className='font-quicksand font-bold text-[16px] leading-tight text-gray-900 tracking-wide'>
-                      BFTP
+                      {t('brand.name')}
                     </h1>
 
-                    <p className='text-sm text-gray-500'>Smoke Meat Everyday</p>
+                    <p className='text-sm text-gray-500'>
+                      {t('brand.tagline')}
+                    </p>
                   </div>
                 </div>
 
@@ -171,7 +176,8 @@ const FoodDeliveryApp = () => {
                         : 'bg-white text-gray-700 border border-gray-400 hover:border-gray-500 hover:text-gray-700 hover:bg-gray-100'
                     }`}
                   >
-                    Delivery
+                    {/* Delivery */}
+                    {t('brand.Location')}
                   </button>
                 )}
 
@@ -188,7 +194,8 @@ const FoodDeliveryApp = () => {
                         : 'bg-white text-gray-700 border border-gray-400 hover:border-gray-500 hover:text-gray-700 hover:bg-gray-100'
                     }`}
                   >
-                    Pickup
+                    {/* Pickup */}
+                    {t('brand.location')}
                   </button>
                 )}
               </div>
@@ -201,22 +208,25 @@ const FoodDeliveryApp = () => {
                   <LuBike className='w-5 h-5 text-gray-400' />
                   <p className='text-sm text-gray-600'>
                     {selectedMethod === 'delivery'
-                      ? 'Deliver to'
-                      : 'Pickup from'}
+                      ? t('brand.Deliverto')
+                      : t('brand.Pickupfrom')}
                   </p>
                 </div>
 
                 <div className='flex items-center gap-3'>
-                  {selectedGovernate && selectedArea ? (
+                  {selectedMethod && (selectedGovernate || selectedArea) ? (
                     <>
                       <p className='text-sm font-medium text-gray-900'>
-                        {selectedArea}
+                        {selectedMethod === 'delivery'
+                          ? selectedArea
+                          : selectedGovernate}
                       </p>
+
                       <button
                         onClick={() => navigate('/pickupdeviler')}
                         className='text-sm text-red-500 hover:text-red-600'
                       >
-                        Edit
+                        {t('brand.Edit')}
                       </button>
                     </>
                   ) : (
@@ -224,7 +234,7 @@ const FoodDeliveryApp = () => {
                       onClick={() => navigate('/pickupdeviler')}
                       className='text-sm font-medium text-gray-900 hover:text-gray-700'
                     >
-                      Choose location
+                      {t('brand.Chooselocation')}
                     </button>
                   )}
                 </div>
@@ -233,13 +243,66 @@ const FoodDeliveryApp = () => {
               <div className='flex items-center justify-between'>
                 <div className='flex items-center gap-10 pl-4'>
                   <Clock className='w-5 h-5 text-gray-400' />
-                  <p className='text-sm text-gray-600'>Earliest arrival</p>
+                  <p className='text-sm text-gray-600'>
+                    {t('brand.Earliestarrival')}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Food Categories */}
             <div className='px-2 pt-8 pb-4 bg-gray-100 grid grid-cols-2 gap-2 cursor-pointer'>
+              {/* Catering section */}
+              <div
+                onClick={() => navigate('/GetAllPackages')}
+                className='relative rounded-lg overflow-hidden shadow'
+              >
+                <img
+                  src={CateringImage}
+                  alt='Catering'
+                  className='w-full h-60 object-cover'
+                />
+                <div className='absolute inset-0 bg-black/25 flex items-center justify-center'>
+                  <h3 className='text-gray-100 font-bold text-lg text-center'>
+                    {t('PlaceOrder.Catering')}
+                  </h3>
+                </div>
+              </div>
+
+              {/* Combo section */}
+              <div
+                onClick={() => navigate('/combo')}
+                className='relative rounded-lg overflow-hidden shadow'
+              >
+                <img
+                  src={ComboImage}
+                  alt='Catering'
+                  className='w-full h-60 object-cover'
+                />
+                <div className='absolute inset-0 bg-black/25 flex items-center justify-center'>
+                  <h3 className='text-gray-100 font-bold text-lg text-center'>
+                    {t('PlaceOrder.COMBOS')}
+                  </h3>
+                </div>
+              </div>
+
+              {/* Diy section */}
+              <div
+                onClick={() => navigate('/diy')}
+                className='relative rounded-lg overflow-hidden shadow'
+              >
+                <img
+                  src={ComboDIY}
+                  alt='Catering'
+                  className='w-full h-60 object-cover'
+                />
+                <div className='absolute inset-0 bg-black/25 flex items-center justify-center'>
+                  <h3 className='text-gray-100 font-bold text-lg text-center'>
+                    {t('PlaceOrder.DIY')}
+                  </h3>
+                </div>
+              </div>
+
               {productCategories.map(item => (
                 <div
                   key={item._id}
@@ -253,7 +316,9 @@ const FoodDeliveryApp = () => {
                   />
                   <div className='absolute inset-0 bg-black/25 flex items-center justify-center'>
                     <h3 className='text-gray-100 font-bold text-lg text-center'>
-                      {item.productName.toUpperCase()}
+                      <h3 className='text-gray-100 font-bold text-lg text-center'>
+                        {(item.productName || item.name || '').toUpperCase()}
+                      </h3>
                     </h3>
                   </div>
                 </div>
@@ -268,7 +333,7 @@ const FoodDeliveryApp = () => {
                 onClick={() => navigate('/pickupdeviler')}
                 className='w-full bg-[#FA0303] hover:bg-[#AF0202] text-white py-3 rounded-lg transition-colors'
               >
-                Select your location
+                {t('brand.Selectlocation')}
               </button>
             </div>
           )}
@@ -290,6 +355,16 @@ const FoodDeliveryApp = () => {
             </div>
 
             <div className='flex items-center space-x-2'>
+              <button
+                onClick={() => changeLanguage(language === 'en' ? 'ar' : 'en')}
+                className='w-10 h-10 bg-white text-black rounded-full flex items-center justify-center hover:bg-gray-100 transition-all'
+              >
+                {language === 'en' ? (
+                  <Globe className='w-5 h-5' />
+                ) : (
+                  <Type className='w-5 h-5' />
+                )}
+              </button>
               <button onClick={handleshoopingcartClick} className='p-2'>
                 <ShoppingBag className='w-6 h-6 text-gray-700' />
               </button>
@@ -333,9 +408,9 @@ const FoodDeliveryApp = () => {
                 />
                 <div>
                   <h1 className='text-md font-bold text-gray-900'>
-                    BFTP
+                    {t('brand.name')}
                   </h1>
-                  <p className='text-sm text-gray-500'>Smoke Meat Everyday</p>
+                  <p className='text-sm text-gray-500'> {t('brand.tagline')}</p>
                 </div>
               </div>
 
@@ -359,7 +434,7 @@ const FoodDeliveryApp = () => {
                     : 'bg-white text-gray-700 border border-gray-400 hover:border-gray-500 hover:text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                Delivery
+                {t('brand.Delivery')}
               </button>
               <button
                 onClick={e => {
@@ -373,7 +448,7 @@ const FoodDeliveryApp = () => {
                     : 'bg-white text-gray-700 border border-gray-400 hover:border-gray-500 hover:text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                Pickup
+                {t('brand.Pickup')}
               </button>
             </div>
 
@@ -398,7 +473,7 @@ const FoodDeliveryApp = () => {
                         onClick={() => navigate('/pickupdeviler')}
                         className='text-sm text-red-500 hover:text-red-600'
                       >
-                        Edit
+                        {t('brand.Edit')}
                       </button>
                     </>
                   ) : (
@@ -406,7 +481,7 @@ const FoodDeliveryApp = () => {
                       onClick={() => navigate('/pickupdeviler')}
                       className='text-sm font-medium text-gray-900 hover:text-gray-700'
                     >
-                      Choose location
+                      {t('brand.Chooselocation')}
                     </button>
                   )}
                 </div>
@@ -414,13 +489,65 @@ const FoodDeliveryApp = () => {
 
               <div className='flex items-center gap-6'>
                 <Clock className='w-5 h-5 text-gray-400' />
-                <p className='text-sm text-gray-600'>Earliest arrival</p>
+                <p className='text-sm text-gray-600'>
+                  {t('brand.Earliestarrival')}
+                </p>
               </div>
             </div>
 
             {/* Product Grid Section - Scrollable */}
             <div className='px-1 py-1'>
               <div className='px-2 pt-8 pb-4 bg-gray-100 grid grid-cols-2 gap-2 cursor-pointer'>
+                {/* Catering */}
+                <div
+                  onClick={() => navigate('/GetAllPackages')}
+                  className='relative rounded-lg overflow-hidden shadow'
+                >
+                  <img
+                    src={CateringImage}
+                    alt='Catering'
+                    className='w-full h-60 object-cover'
+                  />
+                  <div className='absolute inset-0 bg-black/25 flex items-center justify-center'>
+                    <h3 className='text-gray-100 font-bold text-lg text-center'>
+                      {t('PlaceOrder.Catering')}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Combo */}
+                <div
+                  onClick={() => navigate('/combo')}
+                  className='relative rounded-lg overflow-hidden shadow'
+                >
+                  <img
+                    src={ComboImage}
+                    alt='Combo'
+                    className='w-full h-60 object-cover'
+                  />
+                  <div className='absolute inset-0 bg-black/25 flex items-center justify-center'>
+                    <h3 className='text-gray-100 font-bold text-lg text-center'>
+                      {t('PlaceOrder.COMBOS')}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* DIY */}
+                <div
+                  onClick={() => navigate('/diy')}
+                  className='relative rounded-lg overflow-hidden shadow'
+                >
+                  <img
+                    src={ComboDIY}
+                    alt='DIY'
+                    className='w-full h-60 object-cover'
+                  />
+                  <div className='absolute inset-0 bg-black/25 flex items-center justify-center'>
+                    <h3 className='text-gray-100 font-bold text-lg text-center'>
+                      {t('PlaceOrder.DIY')}
+                    </h3>
+                  </div>
+                </div>
                 {productCategories.map(item => (
                   <div
                     key={item._id}
@@ -434,7 +561,9 @@ const FoodDeliveryApp = () => {
                     />
                     <div className='absolute inset-0 bg-black/25 flex items-center justify-center'>
                       <h3 className='text-gray-100 font-bold text-lg text-center'>
-                        {item.productName.toUpperCase()}
+                        <h3 className='text-gray-100 font-bold text-lg text-center'>
+                          {(item.productName || item.name || '').toUpperCase()}
+                        </h3>
                       </h3>
                     </div>
                   </div>
@@ -451,7 +580,7 @@ const FoodDeliveryApp = () => {
               onClick={() => navigate('/pickupdeviler')}
               className='w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors'
             >
-              Select your location
+              {t('brand.Selectlocation')}
             </button>
           </div>
         )}

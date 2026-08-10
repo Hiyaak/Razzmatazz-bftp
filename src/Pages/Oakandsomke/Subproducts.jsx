@@ -87,7 +87,11 @@ const Subproducts = () => {
         <div className='flex-1 overflow-y-auto px-4 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
           <div className='grid grid-cols-2 gap-4 cursor-pointer mt-8 pb-4'>
             {subProductCategories.map(item => {
-              const quantity = getProductQuantity(item._id)
+              const cartQuantity = getProductQuantity(item._id)
+              const availableQuantity = item.quantity ?? 0
+              const canOrder = availableQuantity > 0
+              const maxReached = cartQuantity >= availableQuantity
+
               return (
                 <div
                   key={item._id}
@@ -126,53 +130,65 @@ const Subproducts = () => {
                     {item.price} {t('ShoopingCart.KD')}
                   </div>
 
-                  {quantity === 0 ? (
-                    <button
-                      onClick={() => {
-                        // Make sure brandId exists
-                        if (!localStorage.getItem('brandId')) {
-                          localStorage.setItem('brandId', item.brandId)
-                        }
+                  {canOrder ? (
+                    cartQuantity === 0 ? (
+                      <button
+                        onClick={() => {
+                          // Make sure brandId exists
+                          if (!localStorage.getItem('brandId')) {
+                            localStorage.setItem('brandId', item.brandId)
+                          }
 
-                        addToCart({
-                          cartItemId: `product-${item._id}`,
-                          _id: item._id,
-                          brandId: item.brandId, // also include this
-                          product_id: item.product_id,
-                          type: 'product',
-                          name: item.name,
-                          price: item.price,
-                          image: item.image
-                        })
-                      }}
-                      className='border border-[#FA0303] text-[#FA0303] px-4 rounded hover:bg-red-50 transition-colors font-medium w-full'
-                    >
-                      + {t('ShoopingCart.Add')}
-                    </button>
+                          addToCart({
+                            cartItemId: `product-${item._id}`,
+                            _id: item._id,
+                            brandId: item.brandId,
+                            product_id: item.product_id,
+                            type: 'product',
+                            name: item.name,
+                            price: item.price,
+                            image: item.image
+                          })
+                        }}
+                        className='border border-[#FA0303] text-[#FA0303] px-4 rounded hover:bg-red-50 transition-colors font-medium w-full'
+                      >
+                        + {t('ShoopingCart.Add')}
+                      </button>
+                    ) : (
+                      <div className='flex items-center justify-between rounded-md px-2 py-1'>
+                        <button
+                          onClick={() =>
+                            updateQuantity(`product-${item._id}`, cartQuantity - 1)
+                          }
+                          className='w-4 h-4 flex items-center justify-center bg-white text-[#FA0303] border-2 border-[#FA0303] rounded-full hover:bg-red-50'
+                        >
+                          <Minus className='w-3 h-3' />
+                        </button>
+
+                        <span className='px-3 py-0.5 text-center font-medium text-red-500 text-sm'>
+                          {cartQuantity}
+                        </span>
+
+                        <button
+                          onClick={() =>
+                            updateQuantity(`product-${item._id}`, cartQuantity + 1)
+                          }
+                          disabled={maxReached}
+                          className={`w-4 h-4 flex items-center justify-center bg-white text-[#FA0303] border-2 border-[#FA0303] rounded-full hover:bg-red-50 ${
+                            maxReached ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          <Plus className='w-3 h-3' />
+                        </button>
+                      </div>
+                    )
                   ) : (
-                    <div className='flex items-center justify-between rounded-md px-2 py-1'>
-                      <button
-                        onClick={() =>
-                          updateQuantity(`product-${item._id}`, quantity - 1)
-                        }
-                        className='w-4 h-4 flex items-center justify-center bg-white text-[#FA0303] border-2 border-[#FA0303] rounded-full hover:bg-red-50'
-                      >
-                        <Minus className='w-3 h-3' />
-                      </button>
-
-                      <span className='px-3 py-0.5 text-center font-medium text-red-500 text-sm'>
-                        {quantity}
-                      </span>
-
-                      <button
-                        onClick={() =>
-                          updateQuantity(`product-${item._id}`, quantity + 1)
-                        }
-                        className='w-4 h-4 flex items-center justify-center bg-white text-[#FA0303] border-2 border-[#FA0303] rounded-full hover:bg-red-50'
-                      >
-                        <Plus className='w-3 h-3' />
-                      </button>
-                    </div>
+                    <button
+                      disabled
+                      className='border border-[#FA0303] text-[#FA0303] px-4 rounded bg-white/80 cursor-not-allowed transition-colors font-medium w-full opacity-60'
+                    >
+                      {t('Item Out of stock')}
+                    </button>
                   )}
                 </div>
               )

@@ -110,22 +110,26 @@ const ShoppingCartPage = () => {
   }
 
   const uniqueCart = React.useMemo(() => {
-  const map = new Map();
+    const map = new Map()
 
-  cart.forEach((item) => {
-    // 👉 For catering use packageId as unique
-    const key =
-      item.type === "catering"
-        ? `catering-${item.packageId}`
-        : item.cartItemId;
+    cart.forEach(item => {
+      const key = item.type === 'catering' ? `catering-${item.packageId}` : item.cartItemId
 
-    if (!map.has(key)) {
-      map.set(key, item);
+      if (!map.has(key)) {
+        map.set(key, item)
+      }
+    })
+
+    return Array.from(map.values())
+  }, [cart])
+
+  const getStockLimit = item => {
+    if (item.type === 'product' || item.type === 'diycombo') {
+      return Number(item.stockQuantity ?? item.maxQuantity ?? 0)
     }
-  });
 
-  return Array.from(map.values());
-}, [cart]);
+    return 0
+  }
 
   return (
     <div className='flex flex-col md:flex-row min-h-screen'>
@@ -235,7 +239,11 @@ const ShoppingCartPage = () => {
               // Cart Items List
               <div className='space-y-4 mt-1 px-4 border-b border-gray-200'>
                 {/* {cart.map(item => ( */}
-                {uniqueCart.map(item => (
+                {uniqueCart.map(item => {
+                  const stockLimit = getStockLimit(item)
+                  const isLimitReached = stockLimit > 0 && item.quantity >= stockLimit
+
+                  return (
                   <div
                     key={item.cartItemId}
                     className='border-b border-gray-200 pb-4 last:border-b-0'
@@ -368,12 +376,14 @@ const ShoppingCartPage = () => {
                           <button
                             onClick={() =>
                               item.type !== 'catering' &&
-                              updateQuantity(item.cartItemId, item.quantity + 1)
+                              stockLimit > 0
+                                ? updateQuantity(item.cartItemId, item.quantity + 1)
+                                : updateQuantity(item.cartItemId, item.quantity + 1)
                             }
-                            disabled={item.type === 'catering'}
+                            disabled={item.type === 'catering' || isLimitReached}
                             className={`w-4 h-4 flex items-center justify-center border-2 rounded-full transition-colors
     ${
-      item.type === 'catering'
+      item.type === 'catering' || isLimitReached
         ? 'border-gray-300 text-gray-300 cursor-not-allowed'
         : 'border-[#FA0303] text-[#FA0303] hover:bg-red-50'
     }`}
@@ -392,7 +402,8 @@ const ShoppingCartPage = () => {
                       {t('ShoopingCart.remove')}
                     </button>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

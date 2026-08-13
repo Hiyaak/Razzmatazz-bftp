@@ -125,7 +125,8 @@ const SubproductDetails = () => {
                       type: 'product',
                       name: product.name,
                       price: product.price,
-                      image: product.image
+                      image: product.image,
+                      stockQuantity: product.quantity ?? 0
                     })
                   }
                   className='px-4 py-1 border border-red-600 text-red-600 rounded-full font-semibold mr-4'

@@ -309,8 +309,8 @@ const limitType = selectedReport?.limitType   // "product" OR "subproduct"
                         image: product.image,
                         type: 'diycombo',
                         quantity: 1,
-                        // selectedDate,
-                        diyDate: selectedDateKey, 
+                        stockQuantity: product.quantity ?? 0,
+                        diyDate: selectedDateKey,
                         selectedSlot
                       })
                     }}

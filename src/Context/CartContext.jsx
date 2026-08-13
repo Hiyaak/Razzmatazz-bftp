@@ -62,27 +62,46 @@ export const CartProvider = ({ children }) => {
         cartItem => cartItem.cartItemId === item.cartItemId
       )
 
-      // ✅ If item already exists
+      const stockLimit =
+        item.type === 'product' || item.type === 'diycombo'
+          ? Number(item.stockQuantity ?? item.maxQuantity ?? 0)
+          : 0
+
       if (existingIndex !== -1) {
         const updatedCart = [...prevCart]
 
-        // 🔥 If catering → replace fully
         if (item.type === 'catering') {
           updatedCart[existingIndex] = item
+          return updatedCart
         }
-        // 🔥 If normal product → increase quantity
-        else {
-          updatedCart[existingIndex] = {
-            ...updatedCart[existingIndex],
-            quantity: updatedCart[existingIndex].quantity + 1
-          }
+
+        const currentQuantity = Number(updatedCart[existingIndex].quantity || 0)
+        const nextQuantity = currentQuantity + 1
+
+        if (stockLimit > 0 && nextQuantity > stockLimit) {
+          return prevCart
+        }
+
+        updatedCart[existingIndex] = {
+          ...updatedCart[existingIndex],
+          quantity: nextQuantity
         }
 
         return updatedCart
       }
 
-      // ✅ If new item
-      return [...prevCart, { ...item, quantity: item.quantity || 1 }]
+      if (stockLimit > 0 && item.stockQuantity <= 0) {
+        return prevCart
+      }
+
+      return [
+        ...prevCart,
+        {
+          ...item,
+          quantity: item.quantity || 1,
+          stockQuantity: item.stockQuantity ?? item.maxQuantity ?? undefined
+        }
+      ]
     })
   }
 
@@ -99,11 +118,20 @@ export const CartProvider = ({ children }) => {
     }
 
     setCart(prevCart =>
-      prevCart.map(item =>
-        item.cartItemId === cartItemId
-          ? { ...item, quantity: newQuantity }
-          : item
-      )
+      prevCart.map(item => {
+        if (item.cartItemId !== cartItemId) return item
+
+        const stockLimit =
+          item.type === 'product' || item.type === 'diycombo'
+            ? Number(item.stockQuantity ?? item.maxQuantity ?? 0)
+            : 0
+
+        if (stockLimit > 0 && newQuantity > stockLimit) {
+          return { ...item, quantity: stockLimit }
+        }
+
+        return { ...item, quantity: newQuantity }
+      })
     )
   }
 

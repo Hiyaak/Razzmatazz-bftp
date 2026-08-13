@@ -147,7 +147,8 @@ const Subproducts = () => {
                             type: 'product',
                             name: item.name,
                             price: item.price,
-                            image: item.image
+                            image: item.image,
+                            stockQuantity: availableQuantity
                           })
                         }}
                         className='border border-[#FA0303] text-[#FA0303] px-4 rounded hover:bg-red-50 transition-colors font-medium w-full'

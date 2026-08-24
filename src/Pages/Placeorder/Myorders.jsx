@@ -536,74 +536,76 @@ const Myorders = () => {
                     }
                   })()} */}
                   {/* Cancel Button */}
-                 <div className="mt-3">
-  {/* ❌ Failed ONLINE payment */}
-  {order.paymentMethod === "online" &&
-  order.paymentStatus !== "CAPTURED" ? (
-    <div className="w-full bg-red-100 text-red-700 py-2 rounded-lg text-center font-medium">
-      Payment timed out. Please try again
-    </div>
-  ) : order.paymentMethod === "cash" ? (
-    // 💵 CASH LOGIC
-    order.status === "CancelledByUser" ||
-    order.status === "Rejected" ? (
-      <div className="w-full bg-red-100 text-red-700 py-2 rounded-lg text-center font-medium">
-        {t("MyOrders.Cancelled")}
-      </div>
-    ) : (
-      <button
-        onClick={() => {
-          setSelectedOrderId(order._id);
-          setShowCancelModal(true);
-        }}
-        disabled={cancellingId === order._id}
-        className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:opacity-50"
-      >
-        {cancellingId === order._id
-          ? t("MyOrders.Cancelling")
-          : t("MyOrders.Cancel Order")}
-      </button>
-    )
-  ) : (
-    // 💳 ONLINE SUCCESS FLOW
-    <>
-      {order.status === "CancelledByUser" ? (
-        <button
-          onClick={() => requestRefund(order._id)}
-          className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600"
-        >
-          {t("MyOrders.Request Refund")}
-        </button>
-      ) : order.status === "Refund Requested" ? (
-        <div className="w-full bg-yellow-100 text-yellow-700 py-2 rounded-lg text-center font-medium">
-          {t("MyOrders.Refund Requested")}
-        </div>
-      ) : order.status === "Refunded" ? (
-        <div className="w-full bg-green-100 text-green-700 py-2 rounded-lg text-center font-medium">
-          {t("MyOrders.Refunded")}
-        </div>
-      ) : order.status === "Rejected" ? (
-        <div className="w-full bg-red-100 text-red-700 py-2 rounded-lg text-center font-medium">
-          {t("MyOrders.Order Rejected")} <br />
-          {t("MyOrders.Amount Will Be Refunded")}
-        </div>
-      ) : (
-        <button
-          onClick={() => {
-            setSelectedOrderId(order._id);
-            setShowCancelModal(true);
-          }}
-          disabled={cancellingId === order._id}
-          className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:opacity-50"
-        >
-          {cancellingId === order._id
-            ? t("MyOrders.Cancelling")
-            : t("MyOrders.Cancel Order")}
-        </button>
-      )}
-    </>
-  )}
-</div>
+                  <div className="mt-3">
+                    {/* ❌ Failed ONLINE payment */}
+                    {order.paymentMethod === "online" &&
+                    order.paymentStatus !== "CAPTURED" &&
+                    order.paymentStatus !== "REFUNDED" ? (
+                      <div className="w-full bg-red-100 text-red-700 py-2 rounded-lg text-center font-medium">
+                        Payment timed out. Please try again
+                      </div>
+                    ) : order.paymentMethod === "cash" ? (
+                      // 💵 CASH LOGIC
+                      order.status === "CancelledByUser" ||
+                      order.status === "Rejected" ? (
+                        <div className="w-full bg-red-100 text-red-700 py-2 rounded-lg text-center font-medium">
+                          {t("MyOrders.Cancelled")}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setSelectedOrderId(order._id);
+                            setShowCancelModal(true);
+                          }}
+                          disabled={cancellingId === order._id}
+                          className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:opacity-50"
+                        >
+                          {cancellingId === order._id
+                            ? t("MyOrders.Cancelling")
+                            : t("MyOrders.Cancel Order")}
+                        </button>
+                      )
+                    ) : (
+                      // 💳 ONLINE SUCCESS FLOW
+                      <>
+                        {order.status === "CancelledByUser" ? (
+                          <button
+                            onClick={() => requestRefund(order._id)}
+                            className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600"
+                          >
+                            {t("MyOrders.Request Refund")}
+                          </button>
+                        ) : order.status === "Refund Requested" ? (
+                          <div className="w-full bg-yellow-100 text-yellow-700 py-2 rounded-lg text-center font-medium">
+                            {t("MyOrders.Refund Requested")}
+                          </div>
+                        ) : order.paymentStatus === "REFUNDED" ? (
+                          <div className="w-full bg-green-100 text-green-700 py-2 rounded-lg text-center font-medium">
+                            {/* {t("MyOrders.Refunded")} */}
+                            Your Amount Has Been Refunded.
+                          </div>
+                        ) : order.status === "Rejected" ? (
+                          <div className="w-full bg-red-100 text-red-700 py-2 rounded-lg text-center font-medium">
+                            {t("MyOrders.Order Rejected")} <br />
+                            {t("MyOrders.Amount Will Be Refunded")}
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSelectedOrderId(order._id);
+                              setShowCancelModal(true);
+                            }}
+                            disabled={cancellingId === order._id}
+                            className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:opacity-50"
+                          >
+                            {cancellingId === order._id
+                              ? t("MyOrders.Cancelling")
+                              : t("MyOrders.Cancel Order")}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               );
             })

@@ -76,21 +76,56 @@ const Placeorder = () => {
   };
 
   const fetchAdress = async () => {
-    try {
-      const { data } = await ApiService.get(`getAddressesByUser/${userId}`);
-      if (data.status) {
-        setUserAdress(data.addresses);
+  // Guest users don't have saved addresses
+  if (!registredUserId || !userId) {
+    setUserAdress([]);
+    return;
+  }
 
-        if (data.addresses.length > 0) {
-          setSelectedAddress(data.addresses[0]._id); // default address
-        }
-      } else {
-        toast.error("Failed to load address");
+  try {
+    const { data } = await ApiService.get(
+      `getAddressesByUser/${userId}`
+    );
+
+    if (data.status) {
+      setUserAdress(data.addresses || []);
+
+      if (data.addresses?.length > 0) {
+        setSelectedAddress(
+          data.addresses[0]._id
+        );
       }
-    } catch (error) {
-      toast.error("Something went wrong while loading your profile.");
+    } else {
+      toast.error("Failed to load address");
     }
-  };
+  } catch (error) {
+    console.error(
+      "Error fetching address:",
+      error
+    );
+
+    toast.error(
+      "Something went wrong while loading your address."
+    );
+  }
+};
+
+  // const fetchAdress = async () => {
+  //   try {
+  //     const { data } = await ApiService.get(`getAddressesByUser/${userId}`);
+  //     if (data.status) {
+  //       setUserAdress(data.addresses);
+
+  //       if (data.addresses.length > 0) {
+  //         setSelectedAddress(data.addresses[0]._id); // default address
+  //       }
+  //     } else {
+  //       toast.error("Failed to load address");
+  //     }
+  //   } catch (error) {
+  //     toast.error("Something went wrong while loading your profile.");
+  //   }
+  // };
 
   const handleAdress = () => {
     const selectedAddressObj = userAdress.find(
@@ -106,23 +141,100 @@ const Placeorder = () => {
   };
 
   const fetchProfile = async () => {
-    if (!userId) {
-      toast.error("User not found. Please log in again.");
-      navigate("/profile");
+  if (!userId) {
+    toast.error("User not found. Please log in again.");
+    navigate("/profile");
+    return;
+  }
+
+  // ==========================================
+  // GUEST USER
+  // ==========================================
+  if (!registredUserId && guestUserId) {
+    try {
+      const guestData = JSON.parse(
+        sessionStorage.getItem(
+          `guestUserData_${storedBrandId}`
+        ) || "null"
+      );
+
+      if (guestData) {
+        setProfile(guestData);
+      } else {
+        setProfile({
+          name: "Guest User",
+          email: "",
+          mobileNumber: "",
+        });
+      }
+
+      return;
+    } catch (error) {
+      console.error(
+        "Error reading guest profile:",
+        error
+      );
+
+      setProfile({
+        name: "Guest User",
+        email: "",
+        mobileNumber: "",
+      });
+
       return;
     }
-    try {
-      const payload = { id: userId };
-      const { data } = await ApiService.post("getProfileById", payload);
-      if (data.status) {
-        setProfile(data.profile);
-      } else {
-        toast.error(data.message || "Failed to load profile.");
-      }
-    } catch (error) {
-      toast.error("Something went wrong while loading your profile.");
+  }
+
+  // ==========================================
+  // NORMAL USER
+  // ==========================================
+  try {
+    const payload = {
+      id: userId,
+    };
+
+    const { data } = await ApiService.post(
+      "getProfileById",
+      payload
+    );
+
+    if (data.status) {
+      setProfile(data.profile);
+    } else {
+      toast.error(
+        data.message || "Failed to load profile."
+      );
     }
-  };
+  } catch (error) {
+    console.error(
+      "Error fetching profile:",
+      error
+    );
+
+    toast.error(
+      "Something went wrong while loading your profile."
+    );
+  }
+};
+
+  // const fetchProfile = async () => {
+  //   if (!userId) {
+  //     toast.error("User not found. Please log in again.");
+  //     navigate("/profile");
+  //     return;
+  //   }
+  //   try {
+  //     const payload = { id: userId };
+  //     const { data } = await ApiService.post("getProfileById", payload);
+  //     if (data.status) {
+  //       setProfile(data.profile);
+  //     } else {
+  //       toast.error(data.message || "Failed to load profile.");
+  //     }
+  //   } catch (error) {
+  //     toast.error("Something went wrong while loading your profile.");
+  //   }
+  // };
 
   const getBranchesByBrand = async () => {
     try {
@@ -206,7 +318,7 @@ const Placeorder = () => {
     try {
       setLoadingCoupons(true);
 
-      const brandName = "BFTP";
+      const brandName = "Oak and Smoke";
 
       const { data } = await ApiService.get(
         `getCouponsByBrandName?brandName=${encodeURIComponent(brandName)}`,
@@ -343,228 +455,566 @@ const Placeorder = () => {
   };
 
   const handlePlaceOrder = async () => {
-    try {
-      const storedBrandId = localStorage.getItem("brandId");
-      if (!storedBrandId) return toast.error("No brand selected");
+  try {
+    const storedBrandId = localStorage.getItem("brandId");
 
-      const userId =
-        sessionStorage.getItem(`guestUserId_${storedBrandId}`) ||
-        localStorage.getItem(`registredUserId_${storedBrandId}`);
+    if (!storedBrandId) {
+      toast.error("No brand selected");
+      return;
+    }
 
-      if (!userId) return toast.error("Please login or continue as guest");
+    // ==========================================
+    // USER ID
+    // Normal user gets priority
+    // ==========================================
 
-      const locationData = JSON.parse(
-        localStorage.getItem(`selectedLocation_${storedBrandId}`) || "{}",
+    const registeredUserId = localStorage.getItem(
+      `registredUserId_${storedBrandId}`
+    );
+
+    const guestUserId = sessionStorage.getItem(
+      `guestUserId_${storedBrandId}`
+    );
+
+    const userId = registeredUserId || guestUserId;
+
+    if (!userId) {
+      toast.error(
+        "Please login or continue as guest"
       );
+      return;
+    }
 
-      const { selectedMethod, selectedGovernateId, selectedAreaId } =
-        locationData;
+    // ==========================================
+    // LOCATION DATA
+    // ==========================================
 
-      if (!selectedMethod) {
-        toast.error("Please select delivery type");
+    const locationData = JSON.parse(
+      localStorage.getItem(
+        `selectedLocation_${storedBrandId}`
+      ) || "{}"
+    );
+
+    const {
+      selectedMethod,
+      selectedGovernateId,
+      selectedAreaId,
+    } = locationData;
+
+    if (!selectedMethod) {
+      toast.error("Please select delivery type");
+      return;
+    }
+
+    // ==========================================
+    // BRANCH VALIDATION
+    // ==========================================
+
+    if (!selectedBranchId) {
+      toast.error("Please select branch");
+      return;
+    }
+
+    // ==========================================
+    // PAYMENT VALIDATION
+    // ==========================================
+
+    if (!paymentMethod) {
+      toast.error("Please select payment method");
+      return;
+    }
+
+    // ==========================================
+    // SCHEDULE VALIDATION
+    // ==========================================
+
+    if (showCalendar) {
+      if (!scheduledDate) {
+        toast.error("Please select schedule date");
         return;
       }
 
-      // ✅ Validate branch before starting loader
-      if (selectedMethod === "delivery" && !selectedBranchId) {
+      if (!hour || !minute || !period) {
+        toast.error("Please select schedule time");
+        return;
+      }
+    }
+
+    // ==========================================
+    // START LOADER
+    // ==========================================
+
+    setPlacingOrder(true);
+
+    // ==========================================
+    // CATERING CHECK
+    // ==========================================
+
+    const hasCateringItem = cart.some(
+      (item) => item.orderType === "catering"
+    );
+
+    // ==========================================
+    // FORMAT CART ITEMS
+    // ==========================================
+
+    const items = cart
+      .map((item) => {
+        // Normal product / subproduct
+        if (item.type === "product") {
+          return {
+            itemType: "subproduct",
+            subproduct_id: item._id,
+            quantity: item.quantity,
+          };
+        }
+
+        // Fixed combo
+        if (item.type === "combo") {
+          return {
+            itemType: "fixedCombo",
+            fixedComboId: item._id,
+            quantity: item.quantity,
+          };
+        }
+
+        // DIY combo
+        if (item.type === "diycombo") {
+          if (!item.diyDate || !item.selectedSlot) {
+            toast.error(
+              "Please select date & time for DIY item"
+            );
+
+            return null;
+          }
+
+          return {
+            itemType: "diy",
+            subproduct_id: item._id,
+            quantity: item.quantity,
+            diyDate: item.diyDate,
+            diyTime: item.selectedSlot,
+          };
+        }
+
+        // Catering
+        if (item.orderType === "catering") {
+          const formattedSelections = {};
+
+          Object.entries(
+            item.selections || {}
+          ).forEach(
+            ([categoryId, categoryData]) => {
+              const ids = categoryData.items
+                .filter((menu) =>
+                  menu.isYesNoType
+                    ? menu.selectedValue === true
+                    : true
+                )
+                .map((menu) => menu.id);
+
+              if (ids.length > 0) {
+                formattedSelections[categoryId] =
+                  ids;
+              }
+            }
+          );
+
+          return {
+            itemType: "catering",
+            packageId: item.packageId,
+            persons: item.persons,
+            selections: formattedSelections,
+            eventDate: new Date(item.date)
+              .toISOString()
+              .split("T")[0],
+            eventTime: item.time,
+            address: item.address,
+            contactPhone: item.contactPhone,
+            contactName: item.contactName,
+            specialInstructions:
+              item.specialInstructions || "",
+          };
+        }
+
+        return null;
+      })
+      .filter(Boolean);
+
+    // ==========================================
+    // CART VALIDATION
+    // ==========================================
+
+    if (!items.length) {
+      toast.error("Cart is empty");
+      return;
+    }
+
+    // ==========================================
+    // BASE ORDER PAYLOAD
+    // ==========================================
+
+    const payload = {
+      user_id: userId,
+      items: items,
+      finalTotal: Number(finalTotal),
+
+      // delivery OR pickup
+      deliveryType: selectedMethod,
+
+      // IMPORTANT:
+      // Send the selected branch ID
+      branchId: selectedBranchId,
+
+      specialRemarks: specialRemark,
+      paymentMethod: paymentMethod,
+    };
+
+    // ==========================================
+    // SCHEDULED ORDER
+    // ==========================================
+
+    if (
+      scheduledDate &&
+      hour &&
+      minute &&
+      period
+    ) {
+      payload.scheduledDate =
+        formatDateOnly(scheduledDate);
+
+      payload.scheduledTime =
+        `${hour}:${minute} ${period}`;
+    }
+
+    // ==========================================
+    // DELIVERY ORDER
+    // ==========================================
+
+    if (selectedMethod === "delivery") {
+      payload.address_id = selectedAddress;
+
+      payload.governateId =
+        selectedGovernateId;
+
+      payload.areaId = selectedAreaId;
+
+      if (!hasCateringItem) {
+        payload.deliveryCharge =
+          Number(deliveryCharges);
+      }
+    }
+
+    // ==========================================
+    // PICKUP ORDER
+    // ==========================================
+
+    if (selectedMethod === "pickup") {
+      // Selected branch is mandatory
+      if (!selectedBranchId) {
         toast.error("Please select branch");
         return;
       }
 
-      // ✅ Validate payment method
-      if (!paymentMethod) {
-        toast.error("Please select payment method");
-        return;
-      }
+      payload.branchId = selectedBranchId;
 
-      // ✅ Validate schedule time if calendar opened
-      if (showCalendar) {
-        if (!scheduledDate) {
-          toast.error("Please select schedule date");
-          return;
-        }
+      // Pickup details
+      payload.pickupDetails = {
+        location:
+          selectedGovernate || "",
+        carName:
+          carDetails?.model || "",
+        carColor:
+          carDetails?.color || "",
+        carPlate:
+          carDetails?.plateNumber || "",
+      };
+    }
 
-        if (!hour || !minute || !period) {
-          toast.error("Please select schedule time");
-          return;
-        }
-      }
+    // ==========================================
+    // DEBUG
+    // ==========================================
 
-      // ✅ Start loader ONLY after validations
-      setPlacingOrder(true);
+    console.log(
+      "FINAL PLACE ORDER PAYLOAD:",
+      payload
+    );
 
-      const hasCateringItem = cart.some(
-        (item) => item.orderType === "catering",
+    // ==========================================
+    // PLACE ORDER API
+    // ==========================================
+
+    const { data } =
+      await ApiService.post(
+        "placeOrder",
+        payload
       );
 
-      const items = cart
-        .map((item) => {
-          if (item.type === "product") {
-            return {
-              itemType: "subproduct",
-              subproduct_id: item._id,
-              quantity: item.quantity,
-            };
-          }
+    // ==========================================
+    // SUCCESS
+    // ==========================================
 
-          if (item.type === "combo") {
-            return {
-              itemType: "fixedCombo",
-              fixedComboId: item._id,
-              quantity: item.quantity,
-            };
-          }
+    if (data.status) {
+      if (paymentMethod === "cash") {
+        toast.success(
+          "Order placed successfully!"
+        );
 
-          // if (item.type === "diycombo") {
-          //   if (!item.selectedDate || !item.selectedSlot) {
-          //     toast.error("Please select date & time for DIY item");
-          //     return null;
-          //   }
+        clearCart();
 
-          //   return {
-          //     itemType: "diy",
-          //     subproduct_id: item._id,
-          //     quantity: item.quantity,
-          //     diyDate: new Date(item.selectedDate).toISOString().split("T")[0],
-          //     diyTime: item.selectedSlot,
-          //   };
-          // }
+        navigate("/Myorders");
 
-          if (item.type === "diycombo") {
-            if (!item.diyDate || !item.selectedSlot) {
-              toast.error("Please select date & time for DIY item");
-              return null;
-            }
-
-            return {
-              itemType: "diy",
-              subproduct_id: item._id,
-              quantity: item.quantity,
-              diyDate: item.diyDate, // ✅ FIXED
-              diyTime: item.selectedSlot,
-            };
-          }
-
-          if (item.orderType === "catering") {
-            const formattedSelections = {};
-
-            Object.entries(item.selections || {}).forEach(
-              ([categoryId, categoryData]) => {
-                const ids = categoryData.items
-                  .filter((menu) =>
-                    menu.isYesNoType ? menu.selectedValue === true : true,
-                  )
-                  .map((menu) => menu.id);
-
-                if (ids.length > 0) {
-                  formattedSelections[categoryId] = ids;
-                }
-              },
-            );
-
-            return {
-              itemType: "catering",
-              packageId: item.packageId,
-              persons: item.persons,
-              selections: formattedSelections,
-              eventDate: new Date(item.date).toISOString().split("T")[0],
-              eventTime: item.time,
-              address: item.address,
-              contactPhone: item.contactPhone,
-              contactName: item.contactName,
-              specialInstructions: item.specialInstructions || "",
-            };
-          }
-
-          return null;
-        })
-        .filter(Boolean);
-
-      if (!items.length) {
-        toast.error("Cart is empty");
         return;
       }
 
-      const payload = {
-        user_id: userId,
-        items: items,
-        finalTotal: Number(finalTotal),
-        deliveryType: selectedMethod,
-        branchId: storedBrandId,
-        specialRemarks: specialRemark,
-        paymentMethod: paymentMethod,
-        ...(selectedMethod === "delivery" && { address_id: selectedAddress }),
-      };
-
-      if (scheduledDate && hour && minute && period) {
-        payload.scheduledDate = formatDateOnly(scheduledDate);
-        payload.scheduledTime = `${hour}:${minute} ${period}`;
-      }
-
-      payload.branchId = selectedGovernateId;
-
-      if (selectedMethod === "delivery") {
-        payload.branchId = selectedBranchId;
-        payload.governateId = selectedGovernateId;
-        payload.areaId = selectedAreaId;
-
-        if (!hasCateringItem) {
-          payload.deliveryCharge = Number(deliveryCharges);
+      if (paymentMethod === "online") {
+        if (data.payment_url) {
+          window.location.href =
+            data.payment_url;
+        } else {
+          toast.error(
+            "Payment URL not received"
+          );
         }
       }
-
-      if (selectedMethod === "pickup") {
-        if (!selectedGovernateId) {
-          toast.error("Please select branch");
-          return;
-        }
-
-        if (carDetails?.model || carDetails?.color || carDetails?.plateNumber) {
-          payload.pickupDetails = {
-            location: selectedGovernate,
-            carName: carDetails?.model || "",
-            carColor: carDetails?.color || "",
-            carPlate: carDetails?.plateNumber || "",
-          };
-        }
-      }
-
-      console.log("FINAL PLACE ORDER PAYLOAD:", payload);
-
-      const { data } = await ApiService.post("placeOrder", payload);
-
-      if (data.status) {
-        // if (paymentMethod === 'cash') {
-        //   toast.success('Order placed successfully!')
-        //   navigate('/Myorders')
-        //   return
-        // }
-
-        if (paymentMethod === "cash") {
-          toast.success("Order placed successfully!");
-
-          clearCart(); // ✅ IMPORTANT FIX
-
-          navigate("/Myorders");
-          return;
-        }
-
-        if (paymentMethod === "online") {
-          if (data.payment_url) {
-            window.location.href = data.payment_url;
-          } else {
-            toast.error("Payment URL not received");
-          }
-        }
-      }
-    } catch (error) {
-      console.log("PLACE ORDER ERROR:", error?.response?.data || error);
-      toast.error("Something went wrong while placing your order.");
-    } finally {
-      // ✅ FIX LOADER RESET
-      setPlacingOrder(false);
     }
-  };
+  } catch (error) {
+    console.log(
+      "PLACE ORDER ERROR:",
+      error?.response?.data || error
+    );
+
+    toast.error(
+      "Something went wrong while placing your order."
+    );
+  } finally {
+    setPlacingOrder(false);
+  }
+};
+
+  // const handlePlaceOrder = async () => {
+  //   try {
+  //     const storedBrandId = localStorage.getItem("brandId");
+  //     if (!storedBrandId) return toast.error("No brand selected");
+
+  //     const userId =
+  //       sessionStorage.getItem(`guestUserId_${storedBrandId}`) ||
+  //       localStorage.getItem(`registredUserId_${storedBrandId}`);
+
+  //     if (!userId) return toast.error("Please login or continue as guest");
+
+  //     const locationData = JSON.parse(
+  //       localStorage.getItem(`selectedLocation_${storedBrandId}`) || "{}",
+  //     );
+
+  //     const { selectedMethod, selectedGovernateId, selectedAreaId } =
+  //       locationData;
+
+  //     if (!selectedMethod) {
+  //       toast.error("Please select delivery type");
+  //       return;
+  //     }
+
+  //     // ✅ Validate branch before starting loader
+  //     if (selectedMethod === "delivery" && !selectedBranchId) {
+  //       toast.error("Please select branch");
+  //       return;
+  //     }
+
+  //     // ✅ Validate payment method
+  //     if (!paymentMethod) {
+  //       toast.error("Please select payment method");
+  //       return;
+  //     }
+
+  //     // ✅ Validate schedule time if calendar opened
+  //     if (showCalendar) {
+  //       if (!scheduledDate) {
+  //         toast.error("Please select schedule date");
+  //         return;
+  //       }
+
+  //       if (!hour || !minute || !period) {
+  //         toast.error("Please select schedule time");
+  //         return;
+  //       }
+  //     }
+
+  //     // ✅ Start loader ONLY after validations
+  //     setPlacingOrder(true);
+
+  //     const hasCateringItem = cart.some(
+  //       (item) => item.orderType === "catering",
+  //     );
+
+  //     const items = cart
+  //       .map((item) => {
+  //         if (item.type === "product") {
+  //           return {
+  //             itemType: "subproduct",
+  //             subproduct_id: item._id,
+  //             quantity: item.quantity,
+  //           };
+  //         }
+
+  //         if (item.type === "combo") {
+  //           return {
+  //             itemType: "fixedCombo",
+  //             fixedComboId: item._id,
+  //             quantity: item.quantity,
+  //           };
+  //         }
+
+  //         // if (item.type === "diycombo") {
+  //         //   if (!item.selectedDate || !item.selectedSlot) {
+  //         //     toast.error("Please select date & time for DIY item");
+  //         //     return null;
+  //         //   }
+
+  //         //   return {
+  //         //     itemType: "diy",
+  //         //     subproduct_id: item._id,
+  //         //     quantity: item.quantity,
+  //         //     diyDate: new Date(item.selectedDate).toISOString().split("T")[0],
+  //         //     diyTime: item.selectedSlot,
+  //         //   };
+  //         // }
+
+  //         if (item.type === "diycombo") {
+  //           if (!item.diyDate || !item.selectedSlot) {
+  //             toast.error("Please select date & time for DIY item");
+  //             return null;
+  //           }
+
+  //           return {
+  //             itemType: "diy",
+  //             subproduct_id: item._id,
+  //             quantity: item.quantity,
+  //             diyDate: item.diyDate, // ✅ FIXED
+  //             diyTime: item.selectedSlot,
+  //           };
+  //         }
+
+  //         if (item.orderType === "catering") {
+  //           const formattedSelections = {};
+
+  //           Object.entries(item.selections || {}).forEach(
+  //             ([categoryId, categoryData]) => {
+  //               const ids = categoryData.items
+  //                 .filter((menu) =>
+  //                   menu.isYesNoType ? menu.selectedValue === true : true,
+  //                 )
+  //                 .map((menu) => menu.id);
+
+  //               if (ids.length > 0) {
+  //                 formattedSelections[categoryId] = ids;
+  //               }
+  //             },
+  //           );
+
+  //           return {
+  //             itemType: "catering",
+  //             packageId: item.packageId,
+  //             persons: item.persons,
+  //             selections: formattedSelections,
+  //             eventDate: new Date(item.date).toISOString().split("T")[0],
+  //             eventTime: item.time,
+  //             address: item.address,
+  //             contactPhone: item.contactPhone,
+  //             contactName: item.contactName,
+  //             specialInstructions: item.specialInstructions || "",
+  //           };
+  //         }
+
+  //         return null;
+  //       })
+  //       .filter(Boolean);
+
+  //     if (!items.length) {
+  //       toast.error("Cart is empty");
+  //       return;
+  //     }
+
+  //     const payload = {
+  //       user_id: userId,
+  //       items: items,
+  //       finalTotal: Number(finalTotal),
+  //       deliveryType: selectedMethod,
+  //       branchId: storedBrandId,
+  //       specialRemarks: specialRemark,
+  //       paymentMethod: paymentMethod,
+  //       ...(selectedMethod === "delivery" && { address_id: selectedAddress }),
+  //     };
+
+  //     if (scheduledDate && hour && minute && period) {
+  //       payload.scheduledDate = formatDateOnly(scheduledDate);
+  //       payload.scheduledTime = `${hour}:${minute} ${period}`;
+  //     }
+
+  //     payload.branchId = selectedGovernateId;
+
+  //     if (selectedMethod === "delivery") {
+  //       payload.branchId = selectedBranchId;
+  //       payload.governateId = selectedGovernateId;
+  //       payload.areaId = selectedAreaId;
+
+  //       if (!hasCateringItem) {
+  //         payload.deliveryCharge = Number(deliveryCharges);
+  //       }
+  //     }
+
+  //     if (selectedMethod === "pickup") {
+  //       if (!selectedGovernateId) {
+  //         toast.error("Please select branch");
+  //         return;
+  //       }
+
+  //       if (carDetails?.model || carDetails?.color || carDetails?.plateNumber) {
+  //         payload.pickupDetails = {
+  //           location: selectedGovernate,
+  //           carName: carDetails?.model || "",
+  //           carColor: carDetails?.color || "",
+  //           carPlate: carDetails?.plateNumber || "",
+  //         };
+  //       }
+  //     }
+
+  //     console.log("FINAL PLACE ORDER PAYLOAD:", payload);
+
+  //     const { data } = await ApiService.post("placeOrder", payload);
+
+  //     if (data.status) {
+  //       // if (paymentMethod === 'cash') {
+  //       //   toast.success('Order placed successfully!')
+  //       //   navigate('/Myorders')
+  //       //   return
+  //       // }
+
+  //       if (paymentMethod === "cash") {
+  //         toast.success("Order placed successfully!");
+
+  //         clearCart(); // ✅ IMPORTANT FIX
+
+  //         navigate("/Myorders");
+  //         return;
+  //       }
+
+  //       if (paymentMethod === "online") {
+  //         if (data.payment_url) {
+  //           window.location.href = data.payment_url;
+  //         } else {
+  //           toast.error("Payment URL not received");
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.log("PLACE ORDER ERROR:", error?.response?.data || error);
+  //     toast.error("Something went wrong while placing your order.");
+  //   } finally {
+  //     // ✅ FIX LOADER RESET
+  //     setPlacingOrder(false);
+  //   }
+  // };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">

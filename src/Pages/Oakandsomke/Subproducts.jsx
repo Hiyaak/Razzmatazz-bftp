@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AlarmClock, ArrowLeft, Clock } from 'lucide-react'
 import ApiService, { ImagePath } from '../../Services/Apiservice'
 import { useCart } from '../../Context/CartContext'
 import RightPanelLayout from '../../Layout/RightPanelLayout'
 import { Minus, Plus } from 'lucide-react'
+import { LanguageContext } from '../../Context/LanguageContext'
+import { useTranslation } from 'react-i18next'
 
 const Subproducts = () => {
-  const { name } = useParams()
+  const { t } = useTranslation()
 
+  const { language } = useContext(LanguageContext)
   const location = useLocation()
   const navigate = useNavigate()
   const { cart, addToCart, updateQuantity } = useCart()
@@ -19,14 +22,7 @@ const Subproducts = () => {
   )
 
   const [subProductCategories, setSubProductCategories] = useState([])
-  const searchParams = new URLSearchParams(location.search)
-  const productId = searchParams.get('productId')
-
-  useEffect(() => {
-    if (productId) {
-      getSubProductCategories(productId)
-    }
-  }, [productId])
+  const { productId } = useParams()
 
   const getSubProductCategories = async productId => {
     try {
@@ -35,19 +31,34 @@ const Subproducts = () => {
         brandName: 'BFTP'
       }
       const { data } = await ApiService.post('getAllSubproducts', payload)
+      console.log('Subproducts Response:', data)
       if (data.status) setSubProductCategories(data.subproducts)
     } catch (error) {
       console.log('Error fetching subproducts:', error)
     }
   }
 
+  useEffect(() => {
+    if (productId) {
+      getSubProductCategories(productId)
+    }
+  }, [productId, language])
+
   const handleReviewOrder = () => {
     navigate('/shoopingcart')
   }
 
   const getProductQuantity = productId => {
-    const cartItem = cart.find(item => item._id === productId)
+    const cartItem = cart.find(
+      item => item.cartItemId === `product-${productId}`
+    )
     return cartItem ? cartItem.quantity : 0
+  }
+
+  const handleNavigate = item => {
+    navigate(`/subproductdetails/${item._id}`, {
+      state: { product: item }
+    })
   }
 
   return (
@@ -65,7 +76,7 @@ const Subproducts = () => {
             </button>
 
             <h1 className='text-2xl font-semibold text-gray-900 text-center flex-1'>
-              {decodeURIComponent(name).toUpperCase()}
+              {subProductCategories[0]?.productName?.toUpperCase()}
             </h1>
 
             <div className='w-9' />
@@ -76,7 +87,11 @@ const Subproducts = () => {
         <div className='flex-1 overflow-y-auto px-4 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
           <div className='grid grid-cols-2 gap-4 cursor-pointer mt-8 pb-4'>
             {subProductCategories.map(item => {
-              const quantity = getProductQuantity(item._id)
+              const cartQuantity = getProductQuantity(item._id)
+              const availableQuantity = item.quantity ?? 0
+              const canOrder = availableQuantity > 0
+              const maxReached = cartQuantity >= availableQuantity
+
               return (
                 <div
                   key={item._id}
@@ -87,7 +102,8 @@ const Subproducts = () => {
                     <img
                       src={`${ImagePath}${item.image}`}
                       alt={item.name}
-                      className='w-full h-full object-cover'
+                      className='w-full h-full object-cover cursor-pointer'
+                      onClick={() => handleNavigate(item)}
                     />
 
                     {/* Light gray strip at the bottom of image for timeToPrepare */}
@@ -111,35 +127,69 @@ const Subproducts = () => {
 
                   {/* Price moved here (just above Add button) */}
                   <div className='text-[#FA0303] font-bold text-right mb-3'>
-                    {item.price} KD
+                    {item.price} {t('ShoopingCart.KD')}
                   </div>
 
-                  {/* Add to Cart / Quantity Controls */}
-                  {quantity === 0 ? (
-                    <button
-                      onClick={() => addToCart(item)}
-                      className='border border-[#FA0303] text-[#FA0303] px-4 rounded hover:bg-red-50 transition-colors font-medium w-full'
-                    >
-                      + Add
-                    </button>
+                  {canOrder ? (
+                    cartQuantity === 0 ? (
+                      <button
+                        onClick={() => {
+                          // Make sure brandId exists
+                          if (!localStorage.getItem('brandId')) {
+                            localStorage.setItem('brandId', item.brandId)
+                          }
+
+                          addToCart({
+                            cartItemId: `product-${item._id}`,
+                            _id: item._id,
+                            brandId: item.brandId,
+                            product_id: item.product_id,
+                            type: 'product',
+                            name: item.name,
+                            price: item.price,
+                            image: item.image,
+                            stockQuantity: availableQuantity
+                          })
+                        }}
+                        className='border border-[#FA0303] text-[#FA0303] px-4 rounded hover:bg-red-50 transition-colors font-medium w-full'
+                      >
+                        + {t('ShoopingCart.Add')}
+                      </button>
+                    ) : (
+                      <div className='flex items-center justify-between rounded-md px-2 py-1'>
+                        <button
+                          onClick={() =>
+                            updateQuantity(`product-${item._id}`, cartQuantity - 1)
+                          }
+                          className='w-4 h-4 flex items-center justify-center bg-white text-[#FA0303] border-2 border-[#FA0303] rounded-full hover:bg-red-50'
+                        >
+                          <Minus className='w-3 h-3' />
+                        </button>
+
+                        <span className='px-3 py-0.5 text-center font-medium text-red-500 text-sm'>
+                          {cartQuantity}
+                        </span>
+
+                        <button
+                          onClick={() =>
+                            updateQuantity(`product-${item._id}`, cartQuantity + 1)
+                          }
+                          disabled={maxReached}
+                          className={`w-4 h-4 flex items-center justify-center bg-white text-[#FA0303] border-2 border-[#FA0303] rounded-full hover:bg-red-50 ${
+                            maxReached ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          <Plus className='w-3 h-3' />
+                        </button>
+                      </div>
+                    )
                   ) : (
-                    <div className='flex items-center justify-between rounded-md px-2 py-1'>
-                      <button
-                        onClick={() => updateQuantity(item._id, quantity - 1)}
-                        className='w-4 h-4 flex items-center justify-center bg-white text-[#FA0303] border-2 border-[#FA0303] rounded-full hover:bg-red-50 transition-colors leading-none text-lg'
-                      >
-                        <Minus className='w-3 h-3' />
-                      </button>
-                      <span className='px-3 py-0.5 text-center font-medium text-red-500 text-sm border border-gray-200 rounded'>
-                        {quantity}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(item._id, quantity + 1)}
-                        className='w-4 h-4 flex items-center justify-center bg-white text-[#FA0303] border-2 border-[#FA0303] rounded-full hover:bg-red-50 transition-colors leading-none text-lg'
-                      >
-                        <Plus className='w-3 h-3' />
-                      </button>
-                    </div>
+                    <button
+                      disabled
+                      className='border border-[#FA0303] text-[#FA0303] px-4 rounded bg-white/80 cursor-not-allowed transition-colors font-medium w-full opacity-60'
+                    >
+                      {t('Item Out of stock')}
+                    </button>
                   )}
                 </div>
               )
@@ -155,7 +205,7 @@ const Subproducts = () => {
               onClick={() => navigate('/pickupdeviler')}
               className='w-full bg-[#FA0303] hover:bg-[#AF0202] text-white font-semibold py-3 rounded-lg transition-colors'
             >
-              Select your location
+              {t('brand.Selectlocation')}
             </button>
           </div>
         ) : (
@@ -173,7 +223,7 @@ const Subproducts = () => {
               </div>
 
               {/* Center - Review Order Text */}
-              <span>Review Order</span>
+              <span>{t('ShoopingCart.Review Order')}</span>
 
               {/* Right - Total Price */}
               <span>
@@ -183,7 +233,7 @@ const Subproducts = () => {
                     0
                   )
                   .toFixed(3)}{' '}
-                KD
+                {t('ShoopingCart.KD')}
               </span>
             </button>
           </div>

@@ -2,11 +2,13 @@ import { ArrowLeft } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import RightPanelLayout from '../../Layout/RightPanelLayout'
+import ApiService from '../../Services/Apiservice'
+import { useTranslation } from 'react-i18next'
 
 const Usercheckout = () => {
   const navigate = useNavigate()
   const location = useLocation()
-
+  const { t } = useTranslation()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,7 +24,7 @@ const Usercheckout = () => {
     if (location.state?.profile) {
       const user = location.state.profile
       setFormData({
-        name: user.firstName || '',
+        name: user.name || '',
         email: user.email || '',
         phone: user.mobileNumber ? String(user.mobileNumber) : ''
       })
@@ -39,45 +41,34 @@ const Usercheckout = () => {
     setError('')
     setSuccess(false)
   }
-
   const handleSubmit = async () => {
     if (!userId) return
+
     setLoading(true)
     setError('')
     setSuccess(false)
 
     try {
-      const myHeaders = new Headers()
-      myHeaders.append('Content-Type', 'application/json')
-
-      const raw = JSON.stringify({
+      const payload = {
         user_id: userId,
         Name: formData.name,
         phone: formData.phone.replace(/[^0-9]/g, '')
-      })
-
-      const requestOptions = {
-        method: 'POST',
-        headers: myHeaders,
-        body: raw,
-        redirect: 'follow'
       }
 
-      const response = await fetch(
-        'http://13.126.81.242:5001/updateUser',
-        requestOptions
-      )
-      const result = await response.json()
+      const { data } = await ApiService.post('updateUser', payload)
 
-      if (result.status) {
+      if (data.status) {
         setSuccess(true)
         navigate('/userprofile', { replace: true })
       } else {
-        setError(result.message || 'Failed to update user information')
+        setError(data.message || 'Failed to update user information')
       }
     } catch (err) {
-      console.error('Error:', err)
-      setError('An error occurred while updating. Please try again.')
+      console.error('Error:', err.response?.data || err)
+      setError(
+        err.response?.data?.message ||
+          'An error occurred while updating. Please try again.'
+      )
     } finally {
       setLoading(false)
     }
@@ -188,7 +179,7 @@ const Usercheckout = () => {
                 </svg>
               </div>
               <h2 className='text-2xl font-semibold text-gray-600'>
-                Contact Information
+                {t('Contact.Contact Information')}
               </h2>
             </div>
 
@@ -197,7 +188,7 @@ const Usercheckout = () => {
               {/* Name Field */}
               <div>
                 <label className='block text-sm text-gray-500 mb-1'>
-                  Name <span className='text-red-500'>*</span>
+                  {t('Contact.name')} <span className='text-red-500'>*</span>
                 </label>
                 <input
                   type='text'
@@ -212,9 +203,9 @@ const Usercheckout = () => {
               {/* Email Field (Read-only) */}
               <div>
                 <label className='block text-sm text-gray-500 mb-1'>
-                  Email{' '}
+                  {t('profile.Email')}
                   <span className='text-xs text-gray-400'>
-                    (for your invoice)
+                    ({t('Contact.invoice')})
                   </span>
                 </label>
                 <input
@@ -230,7 +221,7 @@ const Usercheckout = () => {
               {/* Phone Field */}
               <div>
                 <label className='block text-sm text-gray-500 mb-1'>
-                  Phone <span className='text-red-500'>*</span>
+                  {t('Contact.phone')} <span className='text-red-500'>*</span>
                 </label>
                 <div className='flex items-center border-b border-gray-300 focus-within:border-red-600 transition-colors py-3'>
                   <span className='text-base mr-2'>KW</span>
@@ -257,7 +248,7 @@ const Usercheckout = () => {
             disabled={loading || !formData.name || !formData.phone}
             className='w-full bg-[#FA0303] hover:bg-[#AF0202] disabled:bg-red-400 disabled:cursor-not-allowed text-white font-medium py-3 rounded-lg transition-colors text-base'
           >
-            {loading ? 'Saving...' : 'Save'}
+            {loading ? t('Contact.saving') : t('Contact.save')}
           </button>
         </div>
       </div>

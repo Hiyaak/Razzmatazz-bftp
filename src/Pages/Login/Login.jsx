@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { ArrowLeft, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import ApiService from '../../Services/Apiservice'
@@ -6,8 +6,11 @@ import { toast } from 'react-toastify'
 import { MdOutlineMoreTime, MdContacts, MdApartment } from 'react-icons/md'
 import { IoIosContact } from 'react-icons/io'
 import RightPanelLayout from '../../Layout/RightPanelLayout'
+import { useTranslation } from 'react-i18next'
 
 const ContactInfoForm = () => {
+  const { t } = useTranslation()
+ 
   const [showGuestForm, setShowGuestForm] = useState(false)
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
@@ -27,25 +30,75 @@ const ContactInfoForm = () => {
     }))
   }
 
+  // const handleGuestlogin = async () => {
+  //   try {
+  //     const payload = {
+  //       name: formData.name,
+  //       email: formData.email,
+  //       phone: formData.phone,
+  //       brandId: storedBrandId
+  //     }
+  //     const { data } = await ApiService.post('guestUser', payload)
+  //     if (data.status) {
+  //       sessionStorage.setItem(`guestUserId_${storedBrandId}`, data.user._id)
+  //       toast.success('Guest login successful!')
+  //       navigate('/shoopingcart')
+  //     } else {
+  //     }
+  //   } catch (error) {
+  //     toast.error('Something went wrong during login. Please try again.')
+  //   }
+  // }
+
   const handleGuestlogin = async () => {
-    try {
-      const payload = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        brandId: storedBrandId
-      }
-      const { data } = await ApiService.post('guestUser', payload)
-      if (data.status) {
-        sessionStorage.setItem(`guestUserId_${storedBrandId}`, data.user._id)
-        toast.success('Guest login successful!')
-        navigate('/shoopingcart')
-      } else {
-      }
-    } catch (error) {
-      toast.error('Something went wrong during login. Please try again.')
+  try {
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      brandId: storedBrandId,
+    };
+
+    const { data } = await ApiService.post("guestUser", payload);
+
+    if (data.status) {
+      sessionStorage.setItem(
+        `guestUserId_${storedBrandId}`,
+        data.user._id
+      );
+
+      sessionStorage.setItem(
+        `guestUserData_${storedBrandId}`,
+        JSON.stringify({
+          _id: data.user._id,
+          name: data.user.name || formData.name,
+          email: data.user.email || formData.email,
+          mobileNumber:
+            data.user.mobileNumber ||
+            data.user.phone ||
+            formData.phone,
+        })
+      );
+
+      // Remove normal user session
+      localStorage.removeItem(
+        `registredUserId_${storedBrandId}`
+      );
+
+      toast.success("Guest login successful!");
+      navigate("/shoopingcart");
+    } else {
+      toast.error(
+        data.message || "Guest login failed"
+      );
     }
+  } catch (error) {
+    console.error("Guest login error:", error);
+    toast.error(
+      "Something went wrong during login. Please try again."
+    );
   }
+};
 
   const handleSignUp = () => {
     navigate('/profile')
@@ -116,7 +169,8 @@ const ContactInfoForm = () => {
 
                 {/* Title */}
                 <h2 className='text-2xl font-semibold text-gray-700 text-center mb-8'>
-                  Contact Information
+                  {/* Contact Information */}
+                  {t('login.ContactInformation')}
                 </h2>
 
                 {/* Benefits List - Perfectly Aligned */}
@@ -124,7 +178,8 @@ const ContactInfoForm = () => {
                   <div className='flex items-center justify-center gap-4'>
                     <MdApartment className='w-5 h-5 text-gray-700' />
                     <span className='text-gray-800 font-medium'>
-                      Save your addresses
+                      {/* Save your addresses */}
+                      {t('login.Saveyouraddresses')}
                     </span>
                   </div>
 
@@ -132,14 +187,15 @@ const ContactInfoForm = () => {
                   <div className='flex items-center justify-center gap-4'>
                     <MdContacts className='w-5 h-5 text-gray-700 translate-x-[34px]' />
                     <span className='text-gray-800 font-medium translate-x-[34px]'>
-                      Save your contact information
+                      {t('login.Saveyourcontactinformation')}
                     </span>
                   </div>
 
                   <div className='flex items-center justify-center gap-4'>
                     <MdOutlineMoreTime className='w-5 h-5 text-gray-700' />
                     <span className='text-gray-800 font-medium'>
-                      One-tap re-ordering
+                      {/* One-tap re-ordering */}
+                      {t('login.Onetapreordering')}
                     </span>
                   </div>
                 </div>
@@ -150,7 +206,8 @@ const ContactInfoForm = () => {
                     onClick={handleSignUp}
                     className='w-1/2 bg-[#FA0303] hover:bg-[#AF0202] text-white font-semibold py-3 rounded-lg transition-colors shadow-sm'
                   >
-                    SIGN UP
+                    {/* SIGN UP */}
+                    {t('login.signup')}
                   </button>
                 </div>
 
@@ -160,7 +217,8 @@ const ContactInfoForm = () => {
                     onClick={handleContinueAsGuest}
                     className='text-gray-800 font-medium hover:text-gray-900 transition-colors border-b-2 border-red-600 pb-0.5'
                   >
-                    Or continue as Guest
+                    {/* Or continue as Guest */}
+                    {t('login.OrcontinueasGuest')}
                   </button>
                 </div>
               </div>
@@ -190,7 +248,7 @@ const ContactInfoForm = () => {
 
                 {/* Title */}
                 <h2 className='text-2xl font-semibold text-gray-700 text-center mb-8'>
-                  Contact Information
+                  {t('login.ContactInformation')}
                 </h2>
 
                 {/* Form Fields */}
@@ -200,7 +258,7 @@ const ContactInfoForm = () => {
                     <input
                       type='text'
                       name='name'
-                      placeholder='Name *'
+                      placeholder={t('Contact.name')}
                       value={formData.name}
                       onChange={handleInputChange}
                       className='w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-gray-500 focus:outline-none text-gray-800 placeholder-gray-500 transition-colors'
@@ -212,7 +270,9 @@ const ContactInfoForm = () => {
                     <input
                       type='email'
                       name='email'
-                      placeholder='Email (for your invoice)'
+                      placeholder={`${t('profile.Email')} (${t(
+                        'Contact.invoice'
+                      )})`}
                       value={formData.email}
                       onChange={handleInputChange}
                       className='w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-gray-500 focus:outline-none text-gray-800 placeholder-gray-500 transition-colors pr-10'
@@ -244,7 +304,7 @@ const ContactInfoForm = () => {
                       <input
                         type='tel'
                         name='phone'
-                        placeholder='Phone *'
+                        placeholder={t('Contact.phone')}
                         value={formData.phone}
                         onChange={handleInputChange}
                         maxLength={8}
@@ -259,7 +319,7 @@ const ContactInfoForm = () => {
                   onClick={handleGuestlogin}
                   className='w-full bg-[#FA0303] hover:bg-[#AF0202] text-white font-semibold py-3.5 rounded-lg transition-colors shadow-sm'
                 >
-                  Next
+                  {t('brand.Next')}
                 </button>
               </div>
             </>

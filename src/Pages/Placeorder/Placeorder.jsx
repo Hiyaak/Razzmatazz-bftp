@@ -35,14 +35,14 @@ const Placeorder = () => {
   const [hour, setHour] = useState("");
   const [minute, setMinute] = useState("");
   const [period, setPeriod] = useState("");
-  const [selectedBranchId, setSelectedBranchId] = useState("");
+  // const [selectedBranchId, setSelectedBranchId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [carDetails, setCarDetails] = useState({
     make: "",
     color: "",
     plate: "",
   });
-  const [branches, setBranches] = useState([]);
+  // const [branches, setBranches] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [scheduledDate, setScheduledDate] = useState(null);
   const [scheduledTime, setScheduledTime] = useState(
@@ -236,22 +236,22 @@ const Placeorder = () => {
   //   }
   // };
 
-  const getBranchesByBrand = async () => {
-    try {
-      const { data } = await ApiService.get(
-        `getLocationsByBrand?brandId=${storedBrandId}`,
-      );
+  // const getBranchesByBrand = async () => {
+  //   try {
+  //     const { data } = await ApiService.get(
+  //       `getLocationsByBrand?brandId=${storedBrandId}`,
+  //     );
 
-      if (data.status && data.locations) {
-        setBranches(data.locations);
-      } else {
-        setBranches([]);
-      }
-    } catch (error) {
-      console.error("Error fetching branches:", error);
-      setBranches([]);
-    }
-  };
+  //     if (data.status && data.locations) {
+  //       setBranches(data.locations);
+  //     } else {
+  //       setBranches([]);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching branches:", error);
+  //     setBranches([]);
+  //   }
+  // };
 
   const getDeliveryCharges = async () => {
     try {
@@ -415,7 +415,7 @@ const Placeorder = () => {
     fetchProfile();
     getDeliveryCharges();
     fetchSettings();
-    getBranchesByBrand();
+    // getBranchesByBrand();
   }, []);
 
   useEffect(() => {
@@ -510,10 +510,10 @@ const Placeorder = () => {
     // BRANCH VALIDATION
     // ==========================================
 
-    if (!selectedBranchId) {
-      toast.error("Please select branch");
-      return;
-    }
+    // if (!selectedBranchId) {
+    //   toast.error("Please select branch");
+    //   return;
+    // }
 
     // ==========================================
     // PAYMENT VALIDATION
@@ -664,7 +664,7 @@ const Placeorder = () => {
 
       // IMPORTANT:
       // Send the selected branch ID
-      branchId: selectedBranchId,
+      // branchId: selectedBranchId,
 
       specialRemarks: specialRemark,
       paymentMethod: paymentMethod,
@@ -711,12 +711,12 @@ const Placeorder = () => {
 
     if (selectedMethod === "pickup") {
       // Selected branch is mandatory
-      if (!selectedBranchId) {
-        toast.error("Please select branch");
-        return;
-      }
+      // if (!selectedBranchId) {
+      //   toast.error("Please select branch");
+      //   return;
+      // }
 
-      payload.branchId = selectedBranchId;
+      // payload.branchId = selectedBranchId;
 
       // Pickup details
       payload.pickupDetails = {
@@ -1152,7 +1152,7 @@ const Placeorder = () => {
           </div>
 
           {/* Branch Selection */}
-          <div className="border-b border-gray-200">
+          {/* <div className="border-b border-gray-200">
             <div className="bg-gray-100 p-4">
               <h2 className="text-base font-semibold text-gray-800">
                 Select Branch
@@ -1177,7 +1177,7 @@ const Placeorder = () => {
                 </label>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* Payment Method */}
           <div className="border-b border-gray-200">

@@ -582,7 +582,7 @@ const Myorders = () => {
                         ) : order.paymentStatus === "REFUNDED" ? (
                           <div className="w-full bg-green-100 text-green-700 py-2 rounded-lg text-center font-medium">
                             {/* {t("MyOrders.Refunded")} */}
-                            Your Amount Has Been Refunded.
+                           Your amount has been refunded.
                           </div>
                         ) : order.status === "Rejected" ? (
                           <div className="w-full bg-red-100 text-red-700 py-2 rounded-lg text-center font-medium">
